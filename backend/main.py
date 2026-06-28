@@ -2,6 +2,7 @@ from fastapi import FastAPI
 import uvicorn
 import os
 from dotenv import load_dotenv
+from config.db import test_db_connection
 
 load_dotenv()
 
@@ -17,6 +18,9 @@ def healt_check():
         "success":True,
         "message":"Backend Server is healthy"
     }
+
+
+test_db_connection()
 
 PORT=int(os.getenv("PORT",8000))
 if __name__=="__main__":
