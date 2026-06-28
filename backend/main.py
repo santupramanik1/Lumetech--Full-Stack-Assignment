@@ -2,7 +2,12 @@ from fastapi import FastAPI
 import uvicorn
 import os
 from dotenv import load_dotenv
-from config.db import test_db_connection
+from config.db import test_db_connection,Base,engine
+from models.user import User
+from models.darkstore import DarkStore
+from models.product import Product
+from models.order import Order
+from models.orderitems import OrderItem
 
 load_dotenv()
 
@@ -21,6 +26,7 @@ def healt_check():
 
 
 test_db_connection()
+Base.metadata.create_all(bind=engine)
 
 PORT=int(os.getenv("PORT",8000))
 if __name__=="__main__":
