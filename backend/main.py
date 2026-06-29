@@ -10,7 +10,7 @@ from models.darkstore import DarkStore
 from models.product import Product
 from models.order import Order
 from models.orderitems import OrderItem
-from api.routes import auth, stores, products, orders
+from api.routes import auth, stores, products, orders, websocket
 
 from config.redis import test_redis_connection
 
@@ -38,6 +38,7 @@ app.include_router(auth.router,prefix="/api/auth",tags=["Authentication"])
 app.include_router(stores.router,prefix="/api/stores",tags=["Stores"])
 app.include_router(products.router,prefix="/api/products",tags=["Products"])
 app.include_router(orders.router,prefix="/api/orders",tags=["Orders"])
+app.include_router(websocket.router, tags=["WebSockets"])
 
 
 @app.get("/")

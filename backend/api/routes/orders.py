@@ -3,15 +3,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from contextlib import AsyncExitStack
 from typing import List
+import json
 
 from config.db import get_db
-from config.redis import acquire_lock
+from config.redis import acquire_lock, redis_client
 from api.dependencies import require_role
 from models.user import User, UserRole
 from models.product import Product
 from models.order import Order, OrderStatus
 from models.orderitems import OrderItem
+from models.darkstore import DarkStore
 from schemas.order import OrderCreate, OrderResponse
+from schemas.order_status import OrderStatusUpdate
 
 router = APIRouter()
 
@@ -114,14 +117,78 @@ async def create_order(
         for item in db_order_items:
             await db.refresh(item)
 
-        return {
+        # Construct response data
+        response_data = {
             "id": db_order.id,
             "customer_id": db_order.customer_id,
             "store_id": db_order.store_id,
             "delivery_rider_id": db_order.delivery_rider_id,
             "total_amount": db_order.total_amount,
-            "status": db_order.status,
+            "status": db_order.status.value,
             "customer_lat": db_order.customer_lat,
             "customer_lng": db_order.customer_lng,
-            "items": db_order_items
+            "items": [
+                {
+                    "id": item.id,
+                    "order_id": item.order_id,
+                    "product_id": item.product_id,
+                    "quantity": item.quantity
+                }
+                for item in db_order_items
+            ]
         }
+
+        # Publish to Redis Pub/Sub for live store streams
+        try:
+            await redis_client.publish(f"store:{store_id}:orders", json.dumps(response_data))
+        except Exception as e:
+            print(f"Warning: Failed to publish order event to Redis: {e}")
+
+        return response_data
+
+@router.patch("/{order_id}/status", response_model=OrderResponse)
+async def update_order_status(
+    order_id: int,
+    status_update: OrderStatusUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.STORE_MANAGER]))
+):
+    # Fetch Order
+    order_result = await db.execute(select(Order).filter(Order.id == order_id))
+    order = order_result.scalars().first()
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+
+    # Fetch store to verify manager ownership
+    store_result = await db.execute(select(DarkStore).filter(DarkStore.id == order.store_id))
+    store = store_result.scalars().first()
+    if not store or store.manager_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to manage orders for this store"
+        )
+
+    # Update status
+    order.status = status_update.status
+    await db.commit()
+    await db.refresh(order)
+
+    # Fetch items for Response
+    items_result = await db.execute(select(OrderItem).filter(OrderItem.order_id == order.id))
+    items = items_result.scalars().all()
+
+    return {
+        "id": order.id,
+        "customer_id": order.customer_id,
+        "store_id": order.store_id,
+        "delivery_rider_id": order.delivery_rider_id,
+        "total_amount": order.total_amount,
+        "status": order.status,
+        "customer_lat": order.customer_lat,
+        "customer_lng": order.customer_lng,
+        "items": items
+    }
+
