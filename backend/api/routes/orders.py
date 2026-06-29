@@ -192,3 +192,49 @@ async def update_order_status(
         "items": items
     }
 
+@router.patch("/{order_id}/deliver", response_model=OrderResponse)
+async def deliver_order(
+    order_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.DELIVERY_RIDER]))
+):
+    # Fetch Order
+    order_result = await db.execute(select(Order).filter(Order.id == order_id))
+    order = order_result.scalars().first()
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+
+    # Verify current status is DISPATCHED
+    if order.status != OrderStatus.DISPATCHED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Order status must be DISPATCHED to mark as DELIVERED (Current status: {order.status})"
+        )
+
+    # Update status and rider ID
+    order.status = OrderStatus.DELIVERED
+    order.delivery_rider_id = current_user.id
+    
+    await db.commit()
+    await db.refresh(order)
+
+    # Fetch items for Response
+    items_result = await db.execute(select(OrderItem).filter(OrderItem.order_id == order.id))
+    items = items_result.scalars().all()
+
+    return {
+        "id": order.id,
+        "customer_id": order.customer_id,
+        "store_id": order.store_id,
+        "delivery_rider_id": order.delivery_rider_id,
+        "total_amount": order.total_amount,
+        "status": order.status,
+        "customer_lat": order.customer_lat,
+        "customer_lng": order.customer_lng,
+        "items": items
+    }
+
+
