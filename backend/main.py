@@ -10,7 +10,9 @@ from models.darkstore import DarkStore
 from models.product import Product
 from models.order import Order
 from models.orderitems import OrderItem
-from api.routes import auth, stores, products
+from api.routes import auth, stores, products, orders
+
+from config.redis import test_redis_connection
 
 load_dotenv()
 
@@ -18,6 +20,8 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     # Run async database connection check
     await test_db_connection()
+    # Run Redis connection check
+    await test_redis_connection()
     # Create tables asynchronously
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -33,6 +37,7 @@ app=FastAPI(
 app.include_router(auth.router,prefix="/api/auth",tags=["Authentication"])
 app.include_router(stores.router,prefix="/api/stores",tags=["Stores"])
 app.include_router(products.router,prefix="/api/products",tags=["Products"])
+app.include_router(orders.router,prefix="/api/orders",tags=["Orders"])
 
 
 @app.get("/")

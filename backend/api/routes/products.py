@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, Query
+from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from config.db import get_db
@@ -9,6 +10,16 @@ from models.user import User, UserRole
 from api.dependencies import require_role
 
 router = APIRouter()
+
+@router.get("/search", response_model=List[ProductResponse])
+async def search_products(
+    q: str = Query(..., description="Filter products by name"),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Product).filter(Product.name.ilike(f"%{q}%")))
+    products = result.scalars().all()
+    return products
+
 
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(
