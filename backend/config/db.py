@@ -1,33 +1,41 @@
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine,text
-from sqlalchemy.orm import sessionmaker,declarative_base
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.orm import declarative_base
 
 load_dotenv()
 
-DATABASE_URL=os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL and DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-engine=create_engine(DATABASE_URL)
+engine = create_async_engine(
+    DATABASE_URL,
+    connect_args={"statement_cache_size": 0}
+)
 
-SessionLocal=sessionmaker(autocommit=False,autoflush=False,bind=engine)
 
-Base=declarative_base()
+SessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
 
-def get_db():
-    db=SessionLocal()
+Base = declarative_base()
+
+async def get_db():
+    async with SessionLocal() as db:
+        try:
+            yield db
+        finally:
+            await db.close()
+
+async def test_db_connection():
     try:
-        yield db 
-    except:
-        db.close()
-
-def test_db_connection():
-    try:
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
+        async with engine.connect() as connection:
+            await connection.execute(text("SELECT 1"))
         print("Connected to Supabase PostgreSQL Database!\n")
 
     except Exception as e:
         print("ERROR: Database connection failed!")
         print(f"Details: {e}\n")
+
 
 

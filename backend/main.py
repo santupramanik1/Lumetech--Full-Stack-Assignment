@@ -1,32 +1,45 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,Depends
 import uvicorn
 import os
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-from config.db import test_db_connection,Base,engine
+from config.db import test_db_connection,Base,engine,get_db
+from sqlalchemy.ext.asyncio import AsyncSession
 from models.user import User
 from models.darkstore import DarkStore
 from models.product import Product
 from models.order import Order
 from models.orderitems import OrderItem
+from api.routes import auth
 
 load_dotenv()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Run async database connection check
+    await test_db_connection()
+    # Create tables asynchronously
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
 
 app=FastAPI(
     title="Lumetech API",
     description="Backend for the Lumetech Full-Stack Assignment",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
+app.include_router(auth.router,prefix="/api/auth",tags=["Authentication"])
+
+
 @app.get("/")
-def healt_check():
+async def health_check(db:AsyncSession=Depends(get_db)):
     return {
         "success":True,
         "message":"Backend Server is healthy"
     }
 
-
-test_db_connection()
-Base.metadata.create_all(bind=engine)
 
 PORT=int(os.getenv("PORT",8000))
 if __name__=="__main__":
