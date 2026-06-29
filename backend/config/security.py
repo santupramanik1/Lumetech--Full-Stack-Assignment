@@ -3,7 +3,7 @@ import jwt
 from datetime import datetime ,timedelta,timezone
 from passlib.context import CryptContext
 
-SECRET_KEY=os.getenv("SECRET_KEY","your_super_secret_jwt_key_here")
+SECRET_KEY=os.getenv("SECRET_KEY","your_super_secret_jwt_key_here_at_least_32_bytes")
 ALGORITHM=os.getenv("ALGORITHM","HS256")
 ACCESS_TOKEN_EXPIRY=int(os.getenv("ACCESS_TOKEN_EXPIRY",1440))
 
