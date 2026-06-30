@@ -61,7 +61,7 @@ function App() {
   });
 
   // Auth Panel States
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('register');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
@@ -264,8 +264,10 @@ function App() {
           const errData = await response.json();
           throw new Error(errData.detail || 'Registration failed');
         }
-        setAuthSuccess('Registration successful! Logging you in...');
-        action = 'login'; // Automatically attempt log in
+        setAuthSuccess('Registration successful! Please sign in with your credentials.');
+        setAuthMode('login');
+        setIsLoading(false);
+        return;
       }
 
       if (action === 'login') {
