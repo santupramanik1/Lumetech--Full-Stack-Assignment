@@ -1,18 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Store, 
-  Package, 
-  ShoppingCart, 
-  Truck, 
-  Activity, 
-  Plus, 
-  LogOut, 
-  Key, 
-  Info,
-  RefreshCw,
-  Zap
-} from 'lucide-react';
-
 import { Header } from './components/Header';
 import { PortalSelection } from './components/PortalSelection';
 import { AuthForm } from './components/AuthForm';
@@ -20,8 +6,10 @@ import { ManagerDashboard } from './components/ManagerDashboard';
 import { CustomerPortal } from './components/CustomerPortal';
 import { RiderPortal } from './components/RiderPortal';
 
-const API_BASE = 'http://127.0.0.1:7000';
-const WS_BASE = 'ws://127.0.0.1:7000';
+import axios from 'axios';
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:7000';
+const WS_BASE = import.meta.env.VITE_WS_BASE || 'ws://127.0.0.1:7000';
 
 export type Role = 'STORE_MANAGER' | 'CUSTOMER' | 'DELIVERY_RIDER';
 
@@ -86,7 +74,7 @@ function App() {
   const [storeName, setStoreName] = useState('');
   const [storeLat, setStoreLat] = useState('12.9720');
   const [storeLng, setStoreLng] = useState('77.5950');
-  
+
   // Product States
   const [products, setProducts] = useState<Product[]>([]);
   const [newProductName, setNewProductName] = useState('');
@@ -122,11 +110,8 @@ function App() {
 
   const fetchCustomerProducts = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/products/search?q=`);
-      if (response.ok) {
-        const data = await response.json();
-        setCustomerProducts(data);
-      }
+      const response = await axios.get(`${API_BASE}/api/products/search?q=`);
+      setCustomerProducts(response.data);
     } catch (err) {
       console.error('Error fetching customer products:', err);
     }
@@ -142,7 +127,7 @@ function App() {
         return;
       }
     }
-    
+
     if (product.stock_quantity <= 0) {
       showStatus('Product is out of stock', 'error');
       return;
@@ -180,28 +165,21 @@ function App() {
         quantity: qty
       }));
 
-      const response = await fetch(`${API_BASE}/api/orders`, {
-        method: 'POST',
-        headers: getHeaders('CUSTOMER'),
-        body: JSON.stringify({
-          customer_latitude: parseFloat(customerLat),
-          customer_longitude: parseFloat(customerLng),
-          items: items
-        })
+      const response = await axios.post(`${API_BASE}/api/orders`, {
+        customer_latitude: parseFloat(customerLat),
+        customer_longitude: parseFloat(customerLng),
+        items: items
+      }, {
+        headers: getHeaders('CUSTOMER')
       });
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || 'Failed to place order');
-      }
-
-      const orderData = await response.json();
-      showStatus(`Order #${orderData.id} placed successfully!`, 'success');
+      showStatus(`Order #${response.data.id} placed successfully!`, 'success');
       setCart({});
       setCustomerScreen('shopping');
       fetchCustomerProducts(); // Refresh stock
     } catch (err: any) {
-      showStatus(err.message, 'error');
+      const errMsg = err.response?.data?.detail || err.message || 'Failed to place order';
+      showStatus(errMsg, 'error');
     } finally {
       setIsLoading(false);
       setOpLoading('confirmOrder', false);
@@ -214,13 +192,10 @@ function App() {
   const fetchRiderOrders = async () => {
     setOpLoading('refreshPool', true);
     try {
-      const response = await fetch(`${API_BASE}/api/delivery/orders/available`, {
+      const response = await axios.get(`${API_BASE}/api/delivery/orders/available`, {
         headers: getHeaders('DELIVERY_RIDER')
       });
-      if (response.ok) {
-        const data = await response.json();
-        setRiderOrders(data);
-      }
+      setRiderOrders(response.data);
     } catch (err) {
       console.error('Error fetching rider orders:', err);
     } finally {
@@ -232,18 +207,14 @@ function App() {
     setIsLoading(true);
     setOpLoading('rider_order_' + orderId, true);
     try {
-      const response = await fetch(`${API_BASE}/api/orders/${orderId}/deliver`, {
-        method: 'PATCH',
+      await axios.patch(`${API_BASE}/api/orders/${orderId}/deliver`, {}, {
         headers: getHeaders('DELIVERY_RIDER')
       });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || 'Failed to deliver order');
-      }
       showStatus(`Order #${orderId} marked as DELIVERED!`, 'success');
       fetchRiderOrders(); // Refresh pool
     } catch (err: any) {
-      showStatus(err.message, 'error');
+      const errMsg = err.response?.data?.detail || err.message || 'Failed to deliver order';
+      showStatus(errMsg, 'error');
     } finally {
       setIsLoading(false);
       setOpLoading('rider_order_' + orderId, false);
@@ -281,15 +252,11 @@ function App() {
 
     try {
       if (action === 'register') {
-        const response = await fetch(`${API_BASE}/api/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: authEmail, password: authPassword, role: selectedRolePortal }),
+        await axios.post(`${API_BASE}/api/auth/register`, {
+          email: authEmail,
+          password: authPassword,
+          role: selectedRolePortal
         });
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.detail || 'Registration failed');
-        }
         setAuthSuccess('Registration successful! Please sign in with your credentials.');
         setAuthMode('login');
         setIsLoading(false);
@@ -297,16 +264,11 @@ function App() {
       }
 
       if (action === 'login') {
-        const response = await fetch(`${API_BASE}/api/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: authEmail, password: authPassword }),
+        const response = await axios.post(`${API_BASE}/api/auth/login`, {
+          email: authEmail,
+          password: authPassword
         });
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.detail || 'Login failed');
-        }
-        const data = await response.json();
+        const data = response.data;
         if (data.role !== selectedRolePortal) {
           throw new Error(`Unauthorized: You are registered as ${data.role.replace('_', ' ')} and cannot access the ${selectedRolePortal.replace('_', ' ')} Portal.`);
         }
@@ -316,7 +278,8 @@ function App() {
         setAuthPassword('');
       }
     } catch (err: any) {
-      setAuthError(err.message || 'Authentication failed');
+      const errMsg = err.response?.data?.detail || err.message || 'Authentication failed';
+      setAuthError(errMsg);
     } finally {
       setIsLoading(false);
     }
@@ -332,25 +295,19 @@ function App() {
     }
     setOpLoading('createStore', true);
     try {
-      const response = await fetch(`${API_BASE}/api/stores`, {
-        method: 'POST',
-        headers: getHeaders('STORE_MANAGER'),
-        body: JSON.stringify({
-          name: storeName,
-          latitude: parseFloat(storeLat),
-          longitude: parseFloat(storeLng),
-        }),
+      const response = await axios.post(`${API_BASE}/api/stores`, {
+        name: storeName,
+        latitude: parseFloat(storeLat),
+        longitude: parseFloat(storeLng),
+      }, {
+        headers: getHeaders('STORE_MANAGER')
       });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || 'Failed to create Dark Store');
-      }
-      const storeData = await response.json();
-      setManagedStore(storeData);
-      showStatus(`Dark Store "${storeData.name}" created!`, 'success');
+      setManagedStore(response.data);
+      showStatus(`Dark Store "${response.data.name}" created!`, 'success');
       setStoreName('');
     } catch (err: any) {
-      showStatus(err.message, 'error');
+      const errMsg = err.response?.data?.detail || err.message || 'Failed to create Dark Store';
+      showStatus(errMsg, 'error');
     } finally {
       setOpLoading('createStore', false);
     }
@@ -370,28 +327,22 @@ function App() {
 
     setOpLoading('createProduct', true);
     try {
-      const response = await fetch(`${API_BASE}/api/products`, {
-        method: 'POST',
-        headers: getHeaders('STORE_MANAGER'),
-        body: JSON.stringify({
-          store_id: managedStore.id,
-          name: newProductName,
-          price: parseFloat(newProductPrice),
-          stock_quantity: parseInt(newProductStock),
-        }),
+      const response = await axios.post(`${API_BASE}/api/products`, {
+        store_id: managedStore.id,
+        name: newProductName,
+        price: parseFloat(newProductPrice),
+        stock_quantity: parseInt(newProductStock),
+      }, {
+        headers: getHeaders('STORE_MANAGER')
       });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || 'Failed to add product');
-      }
-      const productData = await response.json();
-      setProducts([...products, productData]);
-      showStatus(`Product "${productData.name}" added successfully!`, 'success');
+      setProducts([...products, response.data]);
+      showStatus(`Product "${response.data.name}" added successfully!`, 'success');
       setNewProductName('');
       setNewProductPrice('');
       setNewProductStock('');
     } catch (err: any) {
-      showStatus(err.message, 'error');
+      const errMsg = err.response?.data?.detail || err.message || 'Failed to add product';
+      showStatus(errMsg, 'error');
     } finally {
       setOpLoading('createProduct', false);
     }
@@ -418,25 +369,19 @@ function App() {
     }
     setOpLoading('editProduct_' + productId, true);
     try {
-      const response = await fetch(`${API_BASE}/api/products/${productId}`, {
-        method: 'PATCH',
-        headers: getHeaders('STORE_MANAGER'),
-        body: JSON.stringify({
-          name: editProductName,
-          price: parseFloat(editProductPrice),
-          stock_quantity: parseInt(editProductStock),
-        }),
+      const response = await axios.patch(`${API_BASE}/api/products/${productId}`, {
+        name: editProductName,
+        price: parseFloat(editProductPrice),
+        stock_quantity: parseInt(editProductStock),
+      }, {
+        headers: getHeaders('STORE_MANAGER')
       });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || 'Failed to update product');
-      }
-      const updatedProduct = await response.json();
-      setProducts(products.map(p => p.id === productId ? updatedProduct : p));
-      showStatus(`Product "${updatedProduct.name}" updated successfully!`, 'success');
+      setProducts(products.map(p => p.id === productId ? response.data : p));
+      showStatus(`Product "${response.data.name}" updated successfully!`, 'success');
       setEditingProductId(null);
     } catch (err: any) {
-      showStatus(err.message, 'error');
+      const errMsg = err.response?.data?.detail || err.message || 'Failed to update product';
+      showStatus(errMsg, 'error');
     } finally {
       setOpLoading('editProduct_' + productId, false);
     }
@@ -449,31 +394,27 @@ function App() {
     try {
       let store = managedStore;
       if (!store) {
-        const storeResp = await fetch(`${API_BASE}/api/stores/managed`, {
-          headers: getHeaders('STORE_MANAGER'),
-        });
-        if (storeResp.ok) {
-          store = await storeResp.json();
+        try {
+          const storeResp = await axios.get(`${API_BASE}/api/stores/managed`, {
+            headers: getHeaders('STORE_MANAGER'),
+          });
+          store = storeResp.data;
           setManagedStore(store);
+        } catch (e) {
+          // No store managed yet, which is fine
         }
       }
 
       if (store) {
         // Fetch products using search endpoint
-        const prodResp = await fetch(`${API_BASE}/api/products/search?q=`);
-        if (prodResp.ok) {
-          const allProducts = await prodResp.json();
-          setProducts(allProducts.filter((p: Product) => p.store_id === store.id));
-        }
+        const prodResp = await axios.get(`${API_BASE}/api/products/search?q=`);
+        setProducts(prodResp.data.filter((p: Product) => p.store_id === store!.id));
 
         // Fetch active orders
-        const ordersResp = await fetch(`${API_BASE}/api/stores/${store.id}/orders`, {
+        const ordersResp = await axios.get(`${API_BASE}/api/stores/${store.id}/orders`, {
           headers: getHeaders('STORE_MANAGER'),
         });
-        if (ordersResp.ok) {
-          const ordersData = await ordersResp.json();
-          setActiveOrders(ordersData);
-        }
+        setActiveOrders(ordersResp.data);
       }
     } catch (err: any) {
       console.error('Error fetching manager store data:', err);
@@ -486,22 +427,18 @@ function App() {
   const handleUpdateOrderStatus = async (orderId: number, nextStatus: 'PACKING' | 'DISPATCHED') => {
     setOpLoading('order_' + orderId, true);
     try {
-      const response = await fetch(`${API_BASE}/api/orders/${orderId}/status`, {
-        method: 'PATCH',
-        headers: getHeaders('STORE_MANAGER'),
-        body: JSON.stringify({ status: nextStatus }),
+      const response = await axios.patch(`${API_BASE}/api/orders/${orderId}/status`, {
+        status: nextStatus
+      }, {
+        headers: getHeaders('STORE_MANAGER')
       });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.detail || 'Failed to update order status');
-      }
-      const updatedOrder = await response.json();
-      
+
       // Update local orders list
-      setActiveOrders(activeOrders.map(o => o.id === orderId ? { ...o, status: updatedOrder.status } : o));
+      setActiveOrders(activeOrders.map(o => o.id === orderId ? { ...o, status: response.data.status } : o));
       showStatus(`Order #${orderId} marked as ${nextStatus}!`, 'success');
     } catch (err: any) {
-      showStatus(err.message, 'error');
+      const errMsg = err.response?.data?.detail || err.message || 'Failed to update order status';
+      showStatus(errMsg, 'error');
     } finally {
       setOpLoading('order_' + orderId, false);
     }
@@ -582,10 +519,9 @@ function App() {
 
       {/* Toast Alert */}
       {statusMessage && (
-        <div 
-          className={`fixed bottom-5 right-5 text-white px-5 py-3 rounded-lg shadow-2xl z-50 font-semibold text-sm transition-all duration-300 ${
-            statusMessage.type === 'success' ? 'bg-emerald-500' : statusMessage.type === 'error' ? 'bg-red-500' : 'bg-violet-600'
-          }`}
+        <div
+          className={`fixed bottom-5 right-5 text-white px-5 py-3 rounded-lg shadow-2xl z-50 font-semibold text-sm transition-all duration-300 ${statusMessage.type === 'success' ? 'bg-emerald-500' : statusMessage.type === 'error' ? 'bg-red-500' : 'bg-violet-600'
+            }`}
         >
           {statusMessage.text}
         </div>
