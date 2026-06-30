@@ -67,6 +67,11 @@ function App() {
   const [authError, setAuthError] = useState('');
   const [authSuccess, setAuthSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+
+  const setOpLoading = (op: string, val: boolean) => {
+    setLoadingStates(prev => ({ ...prev, [op]: val }));
+  };
 
   // Store Manager States
   const [managedStore, setManagedStore] = useState<DarkStore | null>(null);
@@ -154,6 +159,7 @@ function App() {
   const handleConfirmOrder = async () => {
     if (Object.keys(cart).length === 0) return;
     setIsLoading(true);
+    setOpLoading('confirmOrder', true);
     try {
       const items = Object.entries(cart).map(([productId, qty]) => ({
         product_id: parseInt(productId),
@@ -184,6 +190,7 @@ function App() {
       showStatus(err.message, 'error');
     } finally {
       setIsLoading(false);
+      setOpLoading('confirmOrder', false);
     }
   };
 
@@ -191,6 +198,7 @@ function App() {
   const [riderOrders, setRiderOrders] = useState<Order[]>([]);
 
   const fetchRiderOrders = async () => {
+    setOpLoading('refreshPool', true);
     try {
       const response = await fetch(`${API_BASE}/api/delivery/orders/available`, {
         headers: getHeaders('DELIVERY_RIDER')
@@ -201,11 +209,14 @@ function App() {
       }
     } catch (err) {
       console.error('Error fetching rider orders:', err);
+    } finally {
+      setOpLoading('refreshPool', false);
     }
   };
 
   const handleMarkAsDelivered = async (orderId: number) => {
     setIsLoading(true);
+    setOpLoading('rider_order_' + orderId, true);
     try {
       const response = await fetch(`${API_BASE}/api/orders/${orderId}/deliver`, {
         method: 'PATCH',
@@ -221,6 +232,7 @@ function App() {
       showStatus(err.message, 'error');
     } finally {
       setIsLoading(false);
+      setOpLoading('rider_order_' + orderId, false);
     }
   };
 
@@ -304,6 +316,7 @@ function App() {
       showStatus('Store details are incomplete', 'error');
       return;
     }
+    setOpLoading('createStore', true);
     try {
       const response = await fetch(`${API_BASE}/api/stores`, {
         method: 'POST',
@@ -324,6 +337,8 @@ function App() {
       setStoreName('');
     } catch (err: any) {
       showStatus(err.message, 'error');
+    } finally {
+      setOpLoading('createStore', false);
     }
   };
 
@@ -339,6 +354,7 @@ function App() {
       return;
     }
 
+    setOpLoading('createProduct', true);
     try {
       const response = await fetch(`${API_BASE}/api/products`, {
         method: 'POST',
@@ -362,12 +378,15 @@ function App() {
       setNewProductStock('');
     } catch (err: any) {
       showStatus(err.message, 'error');
+    } finally {
+      setOpLoading('createProduct', false);
     }
   };
 
   // Fetch Store Manager Data (Store and Orders)
   const fetchStoreData = async () => {
     if (!tokens.STORE_MANAGER) return;
+    setOpLoading('refreshBoard', true);
     try {
       if (managedStore) {
         // Fetch products using search endpoint
@@ -388,11 +407,14 @@ function App() {
       }
     } catch (err: any) {
       console.error('Error fetching manager store data:', err);
+    } finally {
+      setOpLoading('refreshBoard', false);
     }
   };
 
   // Cycle Order Status
   const handleUpdateOrderStatus = async (orderId: number, nextStatus: 'PACKING' | 'DISPATCHED') => {
+    setOpLoading('order_' + orderId, true);
     try {
       const response = await fetch(`${API_BASE}/api/orders/${orderId}/status`, {
         method: 'PATCH',
@@ -410,6 +432,8 @@ function App() {
       showStatus(`Order #${orderId} marked as ${nextStatus}!`, 'success');
     } catch (err: any) {
       showStatus(err.message, 'error');
+    } finally {
+      setOpLoading('order_' + orderId, false);
     }
   };
 
@@ -749,8 +773,8 @@ function App() {
                             />
                           </div>
                         </div>
-                        <button type="submit" className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-pink-500 text-white font-bold py-2.5 rounded-lg text-sm hover:opacity-90 shadow-md shadow-violet-500/10 cursor-pointer">
-                          <Plus size={16} /> Register Store
+                        <button type="submit" className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-pink-500 text-white font-bold py-2.5 rounded-lg text-sm hover:opacity-90 shadow-md shadow-violet-500/10 cursor-pointer" disabled={loadingStates['createStore']}>
+                          {loadingStates['createStore'] ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={16} />} Register Store
                         </button>
                       </form>
                     ) : (
@@ -817,8 +841,8 @@ function App() {
                               />
                             </div>
                           </div>
-                          <button type="submit" className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-pink-500 text-white font-bold py-2.5 rounded-lg text-sm hover:opacity-90 shadow-md shadow-violet-500/10 cursor-pointer">
-                            <Plus size={16} /> Add Product to Store
+                          <button type="submit" className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-pink-500 text-white font-bold py-2.5 rounded-lg text-sm hover:opacity-90 shadow-md shadow-violet-500/10 cursor-pointer" disabled={loadingStates['createProduct']}>
+                            {loadingStates['createProduct'] ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={16} />} Add Product to Store
                           </button>
                         </form>
 
@@ -859,8 +883,8 @@ function App() {
                       <Activity size={18} className="text-emerald-400" />
                       <span>Live Active Orders Tracking Board</span>
                     </div>
-                    <button className="inline-flex items-center gap-1 bg-white/5 border border-white/10 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-white/10 transition-all cursor-pointer" onClick={fetchStoreData}>
-                      <RefreshCw size={12} /> Refresh Board
+                    <button className="inline-flex items-center gap-1 bg-white/5 border border-white/10 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-white/10 transition-all cursor-pointer" onClick={fetchStoreData} disabled={loadingStates['refreshBoard']}>
+                      <RefreshCw size={12} className={loadingStates['refreshBoard'] ? "animate-spin" : ""} /> Refresh Board
                     </button>
                   </div>
 
@@ -891,9 +915,11 @@ function App() {
                               </div>
                               <div className="flex gap-2">
                                 <button 
-                                  className="w-full py-1.5 rounded-lg bg-violet-500/25 text-violet-300 border border-violet-500/40 text-xs font-bold hover:bg-violet-500 hover:text-white cursor-pointer"
+                                  className="w-full py-1.5 rounded-lg bg-violet-500/25 text-violet-300 border border-violet-500/40 text-xs font-bold hover:bg-violet-500 hover:text-white cursor-pointer flex items-center justify-center gap-1.5"
                                   onClick={() => handleUpdateOrderStatus(order.id, 'PACKING')}
+                                  disabled={loadingStates['order_' + order.id]}
                                 >
+                                  {loadingStates['order_' + order.id] ? <RefreshCw size={12} className="animate-spin" /> : null}
                                   Pack Order →
                                 </button>
                               </div>
@@ -922,9 +948,11 @@ function App() {
                               </div>
                               <div className="flex gap-2">
                                 <button 
-                                  className="w-full py-1.5 rounded-lg bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold hover:bg-amber-500 hover:text-white cursor-pointer"
+                                  className="w-full py-1.5 rounded-lg bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold hover:bg-amber-500 hover:text-white cursor-pointer flex items-center justify-center gap-1.5"
                                   onClick={() => handleUpdateOrderStatus(order.id, 'DISPATCHED')}
+                                  disabled={loadingStates['order_' + order.id]}
                                 >
+                                  {loadingStates['order_' + order.id] ? <RefreshCw size={12} className="animate-spin" /> : null}
                                   Dispatch Order →
                                 </button>
                               </div>
@@ -1170,9 +1198,9 @@ function App() {
                       <button 
                         className="w-full mt-6 bg-gradient-to-r from-violet-500 to-pink-500 text-white font-extrabold py-3 rounded-lg text-sm hover:opacity-90 shadow-lg shadow-violet-500/10 transition-all cursor-pointer flex items-center justify-center gap-2"
                         onClick={handleConfirmOrder}
-                        disabled={isLoading}
+                        disabled={loadingStates['confirmOrder']}
                       >
-                        {isLoading ? <RefreshCw size={14} className="animate-spin" /> : 'Confirm & Place Order'}
+                        {loadingStates['confirmOrder'] ? <RefreshCw size={14} className="animate-spin" /> : 'Confirm & Place Order'}
                       </button>
                     </div>
                   </div>
@@ -1195,8 +1223,9 @@ function App() {
                     <button 
                       className="inline-flex items-center gap-1 bg-white/5 border border-white/10 text-white px-4 py-2 rounded-lg text-sm hover:bg-white/10 transition-all cursor-pointer"
                       onClick={fetchRiderOrders}
+                      disabled={loadingStates['refreshPool']}
                     >
-                      <RefreshCw size={14} /> Refresh Pool
+                      <RefreshCw size={14} className={loadingStates['refreshPool'] ? "animate-spin" : ""} /> Refresh Pool
                     </button>
                     <button 
                       className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-white font-semibold px-4 py-2 rounded-lg text-sm hover:bg-white/10 transition-all cursor-pointer" 
@@ -1253,9 +1282,9 @@ function App() {
                           <button 
                             className="w-full bg-gradient-to-r from-violet-500 to-pink-500 text-white font-extrabold py-2.5 rounded-lg text-sm hover:opacity-90 shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
                             onClick={() => handleMarkAsDelivered(order.id)}
-                            disabled={isLoading}
+                            disabled={loadingStates['rider_order_' + order.id]}
                           >
-                            {isLoading ? <RefreshCw size={14} className="animate-spin" /> : 'Mark as Delivered'}
+                            {loadingStates['rider_order_' + order.id] ? <RefreshCw size={14} className="animate-spin" /> : 'Mark as Delivered'}
                           </button>
                         </div>
                       ))}
