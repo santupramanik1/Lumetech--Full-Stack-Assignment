@@ -161,3 +161,9 @@ Start the frontend dev environment:
 npm run dev
 ```
 The web application compiles and will run at `http://localhost:5173/`.
+
+## 🎥 Project Demo
+
+[![SwiftMart Demo](https://img.youtube.com/vi/AbCdEfGhIjk/maxresdefault.jpg)](https://www.youtube.com/watch?v=NGG3BavJaII)
+
+👉 Click the thumbnail above to watch the complete project demonstration.
