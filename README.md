@@ -44,7 +44,7 @@ The system relies on real-time WebSockets to stream active orders to the manager
 
 ---
 
-# Dark Stores (`/api/stores`)
+### Dark Stores (`/api/stores`)
 
 | Method | Endpoint | Access Level | Description |
 |--------|----------|--------------|-------------|
@@ -54,7 +54,7 @@ The system relies on real-time WebSockets to stream active orders to the manager
 
 ---
 
-# Products & Inventory (`/api/products`)
+### Products & Inventory (`/api/products`)
 
 | Method | Endpoint | Access Level | Description |
 |--------|----------|--------------|-------------|
@@ -64,7 +64,7 @@ The system relies on real-time WebSockets to stream active orders to the manager
 
 ---
 
-# Orders & Delivery (`/api/orders` & `/api/delivery`)
+### Orders & Delivery (`/api/orders` & `/api/delivery`)
 
 | Method | Endpoint | Access Level | Description |
 |--------|----------|--------------|-------------|
@@ -75,7 +75,7 @@ The system relies on real-time WebSockets to stream active orders to the manager
 
 ---
 
-# Live WebSocket Streams (`/ws`)
+### Live WebSocket Streams (`/ws`)
 
 | Protocol | Connection Endpoint | Access Level | Description |
 |----------|---------------------|--------------|-------------|
@@ -83,7 +83,7 @@ The system relies on real-time WebSockets to stream active orders to the manager
 
 ---
 
-# API Summary
+### API Summary
 
 | Module | Base Path | Purpose |
 |--------|-----------|---------|
