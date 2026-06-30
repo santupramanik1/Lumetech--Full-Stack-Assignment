@@ -51,7 +51,7 @@ python -m venv venv
 Activate the virtual environment:
 - **Windows (PowerShell)**:
   ```powershell
-  .\venv\Scripts\Activate.ps1
+  .\venv\Scripts\activate
   ```
 - **macOS / Linux**:
   ```bash
@@ -63,7 +63,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. Environment Variables (`.env`)
-Create a `.env` file in the `backend/` folder (a preconfigured one exists):
+Create a `.env` file in the `backend/` folder
 ```ini
 PORT=7000
 DATABASE_URL="postgresql://<user>:<password>@<host>:<port>/<db>"
@@ -100,4 +100,4 @@ Start the frontend dev environment:
 ```bash
 npm run dev
 ```
-The web application compiles and will run at `http://localhost:5173/`. Open this address in your browser to interact with the UI portals.
+The web application compiles and will run at `http://localhost:5173/`.
