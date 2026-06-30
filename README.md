@@ -33,9 +33,9 @@ The system relies on real-time WebSockets to stream active orders to the manager
 └── frontend/           # Vite React TypeScript Frontend
 ```
 
-#  API Documentation
+##  API Documentation
 
-## Authentication (`/api/auth`)
+### Authentication (`/api/auth`)
 
 | Method | Endpoint | Access Level | Description |
 |--------|----------|--------------|-------------|
