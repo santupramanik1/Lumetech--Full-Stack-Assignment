@@ -9,7 +9,8 @@ import {
   LogOut, 
   Key, 
   Info,
-  RefreshCw
+  RefreshCw,
+  Zap
 } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:7000';
@@ -565,13 +566,18 @@ function App() {
     <div className="pb-12 min-h-screen">
       {/* Top Header Bar */}
       <header className="flex flex-col sm:flex-row justify-between items-center px-6 py-4 bg-black/60 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50 gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold shadow-[0_0_15px_rgba(139,92,246,0.35)]" onClick={() => !tokens[selectedRolePortal || 'STORE_MANAGER'] && setSelectedRolePortal(null)} style={{ cursor: 'pointer' }}>
-            L
+        <div className="flex items-center gap-3 select-none" onClick={() => !tokens[selectedRolePortal || 'STORE_MANAGER'] && setSelectedRolePortal(null)} style={{ cursor: 'pointer' }}>
+          <div className="w-10 h-10 bg-gradient-to-br from-amber-400 via-violet-600 to-pink-500 rounded-xl flex items-center justify-center text-white shadow-[0_0_20px_rgba(139,92,246,0.4)] border border-white/20 transition-all hover:scale-105 duration-300">
+            <Zap size={20} className="fill-white text-white drop-shadow-[0_2px_8px_rgba(251,191,36,0.5)]" />
           </div>
-          <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-purple-300 bg-clip-text text-transparent cursor-pointer" onClick={() => !tokens[selectedRolePortal || 'STORE_MANAGER'] && setSelectedRolePortal(null)}>
-            Lumetech Hyperlocal
-          </span>
+          <div className="flex flex-col">
+            <span className="text-xl font-black tracking-tight leading-none bg-gradient-to-r from-white via-white to-purple-300 bg-clip-text text-transparent">
+              Swift<span className="bg-gradient-to-r from-pink-400 to-violet-400 bg-clip-text text-transparent font-medium">Mart</span>
+            </span>
+            <span className="text-[9px] font-bold tracking-widest text-violet-300 uppercase leading-none mt-1">
+              On-Demand
+            </span>
+          </div>
         </div>
 
         {/* WebSocket Status Indicator */}
@@ -622,7 +628,7 @@ function App() {
           <div className="max-w-4xl mx-auto mt-12 text-center space-y-8">
             <div className="space-y-3">
               <h2 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-purple-200 to-pink-300 bg-clip-text text-transparent">
-                Welcome to Lumetech Hyperlocal
+                Welcome to SwiftMart
               </h2>
               <p className="text-gray-400 text-base max-w-lg mx-auto">
                 Please select your access portal below to sign in or register for your dashboard.
@@ -708,7 +714,7 @@ function App() {
               <input 
                 type="email" 
                 className="bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
-                placeholder={`${selectedRolePortal.toLowerCase()}@lumetech.com`}
+                placeholder={`${selectedRolePortal.toLowerCase()}@swiftmart.com`}
                 value={authEmail}
                 onChange={e => setAuthEmail(e.target.value)}
               />
@@ -1289,9 +1295,9 @@ function App() {
                     {/* Simulated Coordinates & Confirm */}
                     <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl space-y-6 flex flex-col justify-between">
                       <div>
-                        <h2 className="text-xl font-bold text-white mb-4">Simulate Coordinates</h2>
+                        <h2 className="text-xl font-bold text-white mb-4">Set Delivery Location</h2>
                         <p className="text-xs text-gray-400 mb-5">
-                          Specify your delivery location coordinates. This will trigger the backend nearest-store check and dynamic delivery assignment algorithms.
+                          Enter your coordinates so we can find the closest store to prepare your order and instantly match you with a nearby delivery rider.
                         </p>
 
                         <div className="space-y-4">
