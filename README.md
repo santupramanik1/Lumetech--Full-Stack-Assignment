@@ -69,6 +69,8 @@ PORT=7000
 DATABASE_URL="postgresql://<user>:<password>@<host>:<port>/<db>"
 REDIS_URL="rediss://default:<password>@<redis-host>:<port>"
 ACCESS_TOKEN_EXPIRY=1440
+SECRET_KEY="<your-secret-key-for-jwt>"
+ALGORITHM=HS256
 ```
 
 ### 3. Running the Server
