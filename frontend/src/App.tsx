@@ -578,7 +578,6 @@ function App() {
         wsConnected={wsConnected}
         managedStore={managedStore}
         setSelectedRolePortal={setSelectedRolePortal}
-        saveToken={saveToken}
       />
 
       {/* Toast Alert */}
@@ -600,7 +599,7 @@ function App() {
             setAuthError={setAuthError}
             setAuthSuccess={setAuthSuccess}
           />
-        ) : !tokens[selectedRolePortal] ? (
+        ) : !tokens[selectedRolePortal as Role] ? (
           <AuthForm
             selectedRolePortal={selectedRolePortal}
             authMode={authMode}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Zap } from 'lucide-react';
-import { Role, DarkStore } from '../App';
+import type { Role, DarkStore } from '../App';
 
 interface HeaderProps {
   selectedRolePortal: Role | null;
@@ -8,7 +8,6 @@ interface HeaderProps {
   wsConnected: boolean;
   managedStore: DarkStore | null;
   setSelectedRolePortal: (role: Role | null) => void;
-  saveToken: (role: Role, token: string | null) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -39,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* WebSocket Status Indicator */}
-      {selectedRolePortal && tokens[selectedRolePortal] && selectedRolePortal === 'STORE_MANAGER' && (
+      {selectedRolePortal && tokens[selectedRolePortal as Role] && selectedRolePortal === 'STORE_MANAGER' && (
         <div className="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
           <div className={`w-2.5 h-2.5 rounded-full ${wsConnected ? 'bg-emerald-500 dot-glow-connected' : 'bg-red-500 dot-glow-disconnected'}`}></div>
           <span>
@@ -56,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="text-xs font-bold px-4 py-1.5 bg-gradient-to-r from-violet-500/20 to-pink-500/20 border border-violet-500/30 rounded-full text-violet-200">
             {selectedRolePortal.replace('_', ' ')} PORTAL
           </span>
-          {!tokens[selectedRolePortal] && (
+          {!tokens[selectedRolePortal as Role] && (
             <button 
               onClick={() => setSelectedRolePortal(null)}
               className="text-xs font-semibold text-gray-400 hover:text-white border border-white/10 hover:bg-white/5 px-3 py-1.5 rounded-lg transition-all cursor-pointer"

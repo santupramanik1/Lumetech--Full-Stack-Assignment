@@ -1,6 +1,6 @@
 import React from 'react';
 import { ShoppingCart, LogOut, RefreshCw } from 'lucide-react';
-import { Role, Product } from '../App';
+import type { Role, Product } from '../App';
 
 interface CustomerPortalProps {
   customerScreen: 'shopping' | 'checkout';

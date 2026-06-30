@@ -1,6 +1,6 @@
 import React from 'react';
 import { Store, ShoppingCart, Truck } from 'lucide-react';
-import { Role } from '../App';
+import type { Role } from '../App';
 
 interface PortalSelectionProps {
   setSelectedRolePortal: (role: Role | null) => void;

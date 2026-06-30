@@ -1,6 +1,6 @@
 import React from 'react';
 import { Key, RefreshCw } from 'lucide-react';
-import { Role } from '../App';
+import type { Role } from '../App';
 
 interface AuthFormProps {
   selectedRolePortal: Role;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Truck, LogOut, RefreshCw } from 'lucide-react';
-import { Role, Order } from '../App';
+import type { Role, Order } from '../App';
 
 interface RiderPortalProps {
   riderOrders: Order[];

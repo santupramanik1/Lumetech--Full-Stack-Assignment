@@ -8,7 +8,7 @@ import {
   Activity, 
   RefreshCw 
 } from 'lucide-react';
-import { Role, Product, Order, DarkStore } from '../App';
+import type { Role, Product, Order, DarkStore } from '../App';
 
 interface ManagerDashboardProps {
   managedStore: DarkStore | null;
