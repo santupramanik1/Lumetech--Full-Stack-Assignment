@@ -27,11 +27,22 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     yield
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app=FastAPI(
     title="Lumetech API",
     description="Backend for the Lumetech Full-Stack Assignment",
     version="1.0.0",
     lifespan=lifespan
+)
+
+# Enable CORS for local and staging frontend origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(auth.router,prefix="/api/auth",tags=["Authentication"])
