@@ -388,16 +388,27 @@ function App() {
     if (!tokens.STORE_MANAGER) return;
     setOpLoading('refreshBoard', true);
     try {
-      if (managedStore) {
+      let store = managedStore;
+      if (!store) {
+        const storeResp = await fetch(`${API_BASE}/api/stores/managed`, {
+          headers: getHeaders('STORE_MANAGER'),
+        });
+        if (storeResp.ok) {
+          store = await storeResp.json();
+          setManagedStore(store);
+        }
+      }
+
+      if (store) {
         // Fetch products using search endpoint
         const prodResp = await fetch(`${API_BASE}/api/products/search?q=`);
         if (prodResp.ok) {
           const allProducts = await prodResp.json();
-          setProducts(allProducts.filter((p: Product) => p.store_id === managedStore.id));
+          setProducts(allProducts.filter((p: Product) => p.store_id === store.id));
         }
 
         // Fetch active orders
-        const ordersResp = await fetch(`${API_BASE}/api/stores/${managedStore.id}/orders`, {
+        const ordersResp = await fetch(`${API_BASE}/api/stores/${store.id}/orders`, {
           headers: getHeaders('STORE_MANAGER'),
         });
         if (ordersResp.ok) {

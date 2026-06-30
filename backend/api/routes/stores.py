@@ -31,6 +31,20 @@ async def create_store(
     await db.refresh(db_store)
     return db_store
 
+@router.get("/managed", response_model=StoreResponse)
+async def get_managed_store(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.STORE_MANAGER]))
+):
+    result = await db.execute(select(DarkStore).filter(DarkStore.manager_id == current_user.id))
+    store = result.scalars().first()
+    if not store:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="You do not have a registered dark store"
+        )
+    return store
+
 @router.get("/{store_id}/orders", response_model=List[OrderResponse])
 async def get_store_orders(
     store_id: int,
