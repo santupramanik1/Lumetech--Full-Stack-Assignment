@@ -1,6 +1,6 @@
-# SwiftMart - On-Demand Hyperlocal E-Commerce Platform
+# SwiftMart - On-Demand E-Commerce Platform
 
-SwiftMart is a modern, high-fidelity, real-time hyperlocal e-commerce web application. The platform provides a customized user experience with three distinct access portals: **Store Managers**, **Customers**, and **Delivery Riders**. 
+SwiftMart is a modern, high-fidelity, real-time  e-commerce web application. The platform provides a customized user experience with three distinct access portals: **Store Managers**, **Customers**, and **Delivery Riders**. 
 
 The system relies on real-time WebSockets to stream active orders to the manager dashboard, coordinate-based closest-store lookups, and auto-dispatch matching algorithms.
 
@@ -78,7 +78,7 @@ Launch the FastAPI application:
 ```bash
 python main.py
 ```
-The backend API server will run at `http://127.0.0.1:7000/`. You can view the automated Swagger documentation at `http://127.0.0.1:7000/docs`.
+The backend API server will run at `http://127.0.0.1:7000/`.
 
 ---
 
