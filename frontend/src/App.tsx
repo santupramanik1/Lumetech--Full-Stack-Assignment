@@ -85,6 +85,12 @@ function App() {
   const [newProductPrice, setNewProductPrice] = useState('');
   const [newProductStock, setNewProductStock] = useState('');
 
+  // Product Edit States
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
+  const [editProductName, setEditProductName] = useState('');
+  const [editProductPrice, setEditProductPrice] = useState('');
+  const [editProductStock, setEditProductStock] = useState('');
+
   // Active Orders & WebSocket
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [wsConnected, setWsConnected] = useState(false);
@@ -380,6 +386,51 @@ function App() {
       showStatus(err.message, 'error');
     } finally {
       setOpLoading('createProduct', false);
+    }
+  };
+
+  const startEditing = (p: Product) => {
+    setEditingProductId(p.id);
+    setEditProductName(p.name);
+    setEditProductPrice(p.price.toString());
+    setEditProductStock(p.stock_quantity.toString());
+  };
+
+  const cancelEditing = () => {
+    setEditingProductId(null);
+    setEditProductName('');
+    setEditProductPrice('');
+    setEditProductStock('');
+  };
+
+  const handleUpdateProduct = async (productId: number) => {
+    if (!editProductName || !editProductPrice || !editProductStock) {
+      showStatus('Product fields cannot be blank', 'error');
+      return;
+    }
+    setOpLoading('editProduct_' + productId, true);
+    try {
+      const response = await fetch(`${API_BASE}/api/products/${productId}`, {
+        method: 'PATCH',
+        headers: getHeaders('STORE_MANAGER'),
+        body: JSON.stringify({
+          name: editProductName,
+          price: parseFloat(editProductPrice),
+          stock_quantity: parseInt(editProductStock),
+        }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.detail || 'Failed to update product');
+      }
+      const updatedProduct = await response.json();
+      setProducts(products.map(p => p.id === productId ? updatedProduct : p));
+      showStatus(`Product "${updatedProduct.name}" updated successfully!`, 'success');
+      setEditingProductId(null);
+    } catch (err: any) {
+      showStatus(err.message, 'error');
+    } finally {
+      setOpLoading('editProduct_' + productId, false);
     }
   };
 
@@ -868,16 +919,76 @@ function App() {
                                   <th className="pb-2">Name</th>
                                   <th className="pb-2">Price</th>
                                   <th className="pb-2">Stock</th>
+                                  <th className="pb-2 text-right">Actions</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {products.map(p => (
-                                  <tr key={p.id} className="border-b border-white/5">
-                                    <td className="py-2">{p.name}</td>
-                                    <td className="py-2">${p.price.toFixed(2)}</td>
-                                    <td className="py-2">{p.stock_quantity}</td>
-                                  </tr>
-                                ))}
+                                {products.map(p => {
+                                  const isEditing = editingProductId === p.id;
+                                  return (
+                                    <tr key={p.id} className="border-b border-white/5">
+                                      {isEditing ? (
+                                        <>
+                                          <td className="py-1">
+                                            <input
+                                              type="text"
+                                              className="w-full bg-black/40 border border-white/10 rounded px-1.5 py-0.5 text-xs text-white outline-none focus:border-violet-500"
+                                              value={editProductName}
+                                              onChange={e => setEditProductName(e.target.value)}
+                                            />
+                                          </td>
+                                          <td className="py-1">
+                                            <input
+                                              type="number"
+                                              step="0.01"
+                                              className="w-16 bg-black/40 border border-white/10 rounded px-1.5 py-0.5 text-xs text-white outline-none focus:border-violet-500"
+                                              value={editProductPrice}
+                                              onChange={e => setEditProductPrice(e.target.value)}
+                                            />
+                                          </td>
+                                          <td className="py-1">
+                                            <input
+                                              type="number"
+                                              className="w-12 bg-black/40 border border-white/10 rounded px-1.5 py-0.5 text-xs text-white outline-none focus:border-violet-500"
+                                              value={editProductStock}
+                                              onChange={e => setEditProductStock(e.target.value)}
+                                            />
+                                          </td>
+                                          <td className="py-1 text-right space-x-1.5">
+                                            <button
+                                              onClick={() => handleUpdateProduct(p.id)}
+                                              disabled={loadingStates['editProduct_' + p.id]}
+                                              className="text-[10px] bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-white px-2 py-0.5 rounded cursor-pointer transition-all inline-flex items-center gap-1"
+                                            >
+                                              {loadingStates['editProduct_' + p.id] && <RefreshCw size={8} className="animate-spin" />}
+                                              Save
+                                            </button>
+                                            <button
+                                              onClick={cancelEditing}
+                                              className="text-[10px] bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white px-2 py-0.5 rounded cursor-pointer transition-all"
+                                            >
+                                              Cancel
+                                            </button>
+                                          </td>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <td className="py-2">{p.name}</td>
+                                          <td className="py-2">${p.price.toFixed(2)}</td>
+                                          <td className="py-2">{p.stock_quantity}</td>
+                                          <td className="py-2 text-right">
+                                            <button
+                                              onClick={() => startEditing(p)}
+                                              className="text-[10px] bg-white/5 border border-white/10 text-violet-300 hover:bg-violet-500 hover:text-white px-2 py-0.5 rounded cursor-pointer transition-all"
+                                            >
+                                              Edit
+                                            </button>
+                                          </td>
+                                        </>
+                                      )}
+                                    </tr>
+                                  );
+                                })}
                               </tbody>
                             </table>
                           )}
